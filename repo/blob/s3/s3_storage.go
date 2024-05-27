@@ -369,9 +369,10 @@ func newStorageWithCredentials(ctx context.Context, creds *credentials.Credentia
 	}
 
 	minioOpts := &minio.Options{
-		Creds:  creds,
-		Secure: !opt.DoNotUseTLS,
-		Region: opt.Region,
+		Creds:        creds,
+		Secure:       !opt.DoNotUseTLS,
+		Region:       opt.Region,
+		BucketLookup: minio.BucketLookupDNS,
 	}
 
 	var err error
