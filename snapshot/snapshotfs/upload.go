@@ -7,7 +7,6 @@ import (
 	"github.com/svenwiltink/sparsecat"
 	"github.com/svenwiltink/sparsecat/format"
 	"io"
-	"math"
 	"math/rand"
 	"os"
 	"path"
@@ -15,6 +14,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -166,8 +166,13 @@ func (u *Uploader) uploadFileInternal(ctx context.Context, parentCheckpointRegis
 	comp := pol.CompressionPolicy.CompressorForFile(f)
 
 	chunkSize := pol.UploadPolicy.ParallelUploadAboveSize.OrDefault(-1)
-	chunkSize = math.MaxInt64
-	if chunkSize < 0 || f.Size() <= chunkSize {
+
+	actualSize, err := getFileActualSize(f.LocalFilesystemPath())
+	if err != nil {
+		actualSize = -1
+	}
+
+	if chunkSize < 0 || f.Size() <= chunkSize || f.Size()/actualSize > 20 {
 		// all data fits in 1 full chunks, upload directly
 		return u.uploadFileData(ctx, parentCheckpointRegistry, f, f.Name(), 0, -1, comp)
 	}
@@ -210,6 +215,25 @@ func (u *Uploader) uploadFileInternal(ctx context.Context, parentCheckpointRegis
 	}
 
 	return concatenateParts(ctx, u.repo, f.Name(), parts)
+}
+
+func getFileActualSize(path string) (int64, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var stat syscall.Stat_t
+	if err := syscall.Fstat(int(file.Fd()), &stat); err != nil {
+		return 0, err
+	}
+
+	// The actual size, in bytes, is stored in the Blocks field and needs to be converted from 512-byte blocks to bytes
+	blockSize := int64(512)
+	actualSize := stat.Blocks * blockSize
+
+	return actualSize, nil
 }
 
 func concatenateParts(ctx context.Context, rep repo.RepositoryWriter, name string, parts []*snapshot.DirEntry) (*snapshot.DirEntry, error) {
@@ -267,22 +291,57 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 	defer parentCheckpointRegistry.removeCheckpointCallback(fname)
 
 	uploadLog(ctx).Debugf("LocalFilesystemPath %s, offset %d, length %d", f.LocalFilesystemPath(), offset, length)
-	spf, err := os.Open(f.LocalFilesystemPath())
+
+	var s io.Reader
+
+	actualSize, err := getFileActualSize(f.LocalFilesystemPath())
 	if err != nil {
-		panic(err)
+		actualSize = -1
 	}
-	defer spf.Close()
-	sp := sparsecat.NewEncoder(spf)
-	sp.Format = format.RbdDiffv2
-	sp.MaxSectionSize = 16_000_000
 
-	if offset != 0 {
-		if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
-			return nil, errors.Wrap(serr, "seek error")
+	if f.Size()/actualSize > 20 {
+		spf, err := os.Open(f.LocalFilesystemPath())
+		if err != nil {
+			panic(err)
 		}
+		defer spf.Close()
+		sp := sparsecat.NewEncoder(spf)
+		sp.Format = format.RbdDiffv2
+		sp.MaxSectionSize = 16_000_000
+
+		if offset != 0 {
+			if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
+				return nil, errors.Wrap(serr, "seek error")
+			}
+		}
+
+		s = sp
+	} else {
+		if offset != 0 {
+			if _, serr := file.Seek(offset, io.SeekStart); serr != nil {
+				return nil, errors.Wrap(serr, "seek error")
+			}
+		}
+
+		s = file
 	}
 
-	var s io.Reader = sp
+	//spf, err := os.Open(f.LocalFilesystemPath())
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer spf.Close()
+	//sp := sparsecat.NewEncoder(spf)
+	//sp.Format = format.RbdDiffv2
+	//sp.MaxSectionSize = 16_000_000
+	//
+	//if offset != 0 {
+	//	if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
+	//		return nil, errors.Wrap(serr, "seek error")
+	//	}
+	//}
+	//
+	//var s io.Reader = sp
 	if length >= 0 {
 		s = io.LimitReader(s, length)
 	}
