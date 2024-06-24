@@ -335,6 +335,7 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 	sp := sparsecat.NewEncoder(spf)
 	sp.Format = format.RbdDiffv2
 	sp.MaxSectionSize = 2 << 30
+	sp.MaxOffset = offset + length
 
 	if offset != 0 {
 		if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
