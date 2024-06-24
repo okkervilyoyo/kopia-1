@@ -167,12 +167,13 @@ func (u *Uploader) uploadFileInternal(ctx context.Context, parentCheckpointRegis
 
 	chunkSize := pol.UploadPolicy.ParallelUploadAboveSize.OrDefault(-1)
 
-	actualSize, err := getFileActualSize(f.LocalFilesystemPath())
-	if err != nil {
-		actualSize = -1
-	}
-
-	if chunkSize < 0 || f.Size() <= chunkSize || f.Size()/actualSize > 20 {
+	//actualSize, err := getFileActualSize(f.LocalFilesystemPath())
+	//if err != nil {
+	//	actualSize = -1
+	//}
+	//
+	//if chunkSize < 0 || f.Size() <= chunkSize || f.Size()/actualSize > 20 {
+	if chunkSize < 0 || f.Size() <= chunkSize {
 		// all data fits in 1 full chunks, upload directly
 		return u.uploadFileData(ctx, parentCheckpointRegistry, f, f.Name(), 0, -1, comp)
 	}
@@ -294,41 +295,57 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 
 	var s io.Reader
 
-	actualSize, err := getFileActualSize(f.LocalFilesystemPath())
+	//actualSize, err := getFileActualSize(f.LocalFilesystemPath())
+	//if err != nil {
+	//	actualSize = -1
+	//}
+
+	//if f.Size()/actualSize > 20 {
+	//	spf, err := os.Open(f.LocalFilesystemPath())
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	defer spf.Close()
+	//	sp := sparsecat.NewEncoder(spf)
+	//	sp.Format = format.RbdDiffv2
+	//	sp.MaxSectionSize = 16_000_000
+	//
+	//	if offset != 0 {
+	//		if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
+	//			return nil, errors.Wrap(serr, "seek error")
+	//		}
+	//	}
+	//
+	//	s = sp
+	//} else {
+	//	if offset != 0 {
+	//		if _, serr := file.Seek(offset, io.SeekStart); serr != nil {
+	//			return nil, errors.Wrap(serr, "seek error")
+	//		}
+	//	}
+	//
+	//	s = file
+	//}
+
+	spf, err := os.Open(f.LocalFilesystemPath())
 	if err != nil {
-		actualSize = -1
+		panic(err)
+	}
+	defer spf.Close()
+	sp := sparsecat.NewEncoder(spf)
+	sp.Format = format.RbdDiffv2
+	sp.MaxSectionSize = 2 << 30
+
+	if offset != 0 {
+		if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
+			return nil, errors.Wrap(serr, "seek error")
+		}
 	}
 
-	if f.Size()/actualSize > 20 {
-		spf, err := os.Open(f.LocalFilesystemPath())
-		if err != nil {
-			panic(err)
-		}
-		defer spf.Close()
-		sp := sparsecat.NewEncoder(spf)
-		sp.Format = format.RbdDiffv2
-		sp.MaxSectionSize = 16_000_000
-
-		if offset != 0 {
-			if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
-				return nil, errors.Wrap(serr, "seek error")
-			}
-		}
-
-		s = sp
-	} else {
-		if offset != 0 {
-			if _, serr := file.Seek(offset, io.SeekStart); serr != nil {
-				return nil, errors.Wrap(serr, "seek error")
-			}
-		}
-
-		s = file
-	}
-
-	if length >= 0 {
-		s = io.LimitReader(s, length)
-	}
+	//if length >= 0 {
+	//	s = io.LimitReader(s, length)
+	//}
+	s = io.LimitReader(s, length)
 
 	written, err := u.copyWithProgress(writer, s)
 	if err != nil {
