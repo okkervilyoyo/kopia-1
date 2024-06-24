@@ -345,7 +345,7 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 	//if length >= 0 {
 	//	s = io.LimitReader(s, length)
 	//}
-	s = io.LimitReader(s, length)
+	s = io.LimitReader(sp, length)
 
 	written, err := u.copyWithProgress(writer, s)
 	if err != nil {
