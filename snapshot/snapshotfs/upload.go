@@ -167,12 +167,13 @@ func (u *Uploader) uploadFileInternal(ctx context.Context, parentCheckpointRegis
 
 	chunkSize := pol.UploadPolicy.ParallelUploadAboveSize.OrDefault(-1)
 
-	actualSize, err := getFileActualSize(f.LocalFilesystemPath())
-	if err != nil {
-		actualSize = -1
-	}
-
-	if chunkSize < 0 || f.Size() <= chunkSize || f.Size()/actualSize > 20 {
+	//actualSize, err := getFileActualSize(f.LocalFilesystemPath())
+	//if err != nil {
+	//	actualSize = -1
+	//}
+	//
+	//if chunkSize < 0 || f.Size() <= chunkSize || f.Size()/actualSize > 20 {
+	if chunkSize < 0 || f.Size() <= chunkSize {
 		// all data fits in 1 full chunks, upload directly
 		return u.uploadFileData(ctx, parentCheckpointRegistry, f, f.Name(), 0, -1, comp)
 	}
