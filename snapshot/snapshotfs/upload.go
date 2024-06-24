@@ -299,23 +299,6 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 		actualSize = -1
 	}
 
-	spf, err := os.Open(f.LocalFilesystemPath())
-	if err != nil {
-		panic(err)
-	}
-	defer spf.Close()
-	sp := sparsecat.NewEncoder(spf)
-	sp.Format = format.RbdDiffv2
-	sp.MaxSectionSize = 16_000_000
-
-	if offset != 0 {
-		if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
-			return nil, errors.Wrap(serr, "seek error")
-		}
-	}
-
-	s = sp
-
 	if f.Size()/actualSize > 20 {
 		spf, err := os.Open(f.LocalFilesystemPath())
 		if err != nil {
