@@ -136,4 +136,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/svenwiltink/sparsecat => github.com/okkervil/sparsecat v1.0.2-0.20240624094504-ebd7e5da2458
+replace github.com/svenwiltink/sparsecat => github.com/okkervil/sparsecat v1.0.2-0.20240704114050-b68c70a58288
