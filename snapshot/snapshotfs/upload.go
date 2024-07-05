@@ -316,6 +316,8 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 		//sp.Format = format.RbdDiffv2
 		//sp.MaxSectionSize = 16_000_000
 
+		uploadLog(ctx).Debugf("CurrentOffset: %d, MaxSectionOffset: %d, MaxSectionSize: %d\n", sp.CurrentOffset, sp.MaxSectionOffset, sp.MaxSectionSize)
+
 		if offset != 0 {
 			if _, serr := spf.Seek(offset, io.SeekStart); serr != nil {
 				return nil, errors.Wrap(serr, "seek error")
