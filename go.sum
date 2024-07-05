@@ -218,6 +218,7 @@ github.com/okkervil/sparsecat v1.0.2-0.20240624034725-1f6b1b87754e/go.mod h1:Tdt
 github.com/okkervil/sparsecat v1.0.2-0.20240624093654-730cb2bd84ca/go.mod h1:TdtvJbeTZcd+3cMQpttW6MJl/iPGZT0GHmckep0hoxU=
 github.com/okkervil/sparsecat v1.0.2-0.20240624094504-ebd7e5da2458/go.mod h1:TdtvJbeTZcd+3cMQpttW6MJl/iPGZT0GHmckep0hoxU=
 github.com/okkervil/sparsecat v1.0.2-0.20240704114050-b68c70a58288/go.mod h1:TdtvJbeTZcd+3cMQpttW6MJl/iPGZT0GHmckep0hoxU=
+github.com/okkervil/sparsecat v1.0.2-0.20240705081133-4fc87e4dd947/go.mod h1:TdtvJbeTZcd+3cMQpttW6MJl/iPGZT0GHmckep0hoxU=
 github.com/orisano/pixelmatch v0.0.0-20220722002657-fb0b55479cde h1:x0TT0RDC7UhAVbbWWBzr41ElhJx5tXPWkIHA2HWPRuw=
 github.com/orisano/pixelmatch v0.0.0-20220722002657-fb0b55479cde/go.mod h1:nZgzbfBr3hhjoZnS66nKrHmduYNpc34ny7RK4z5/HM0=
 github.com/pierrec/lz4 v2.6.1+incompatible h1:9UY3+iC23yxF0UfGaYrGplQ+79Rg+h/q9FV9ix19jjM=
