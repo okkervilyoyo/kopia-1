@@ -306,6 +306,11 @@ func (u *Uploader) uploadFileData(ctx context.Context, parentCheckpointRegistry 
 		}
 		defer spf.Close()
 		sp := sparsecat.NewEncoder(spf)
+
+		if length == -1 {
+			length = f.Size() - offset
+		}
+
 		sp.CurrentOffset = offset
 		sp.MaxSectionOffset = offset + length
 		//sp.Format = format.RbdDiffv2
